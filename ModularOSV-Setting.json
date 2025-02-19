@@ -1,0 +1,15 @@
+{
+    "bbs_id": "test",
+    "bbs_name": "テスト",
+    "bbs_description_html": "テスト",
+    "bbs_error_message_thread_not_found": "スレッドがありません",
+    "bbs_error_message_contains_prohibited_words": "禁止ワードが含まれています",
+    "bbs_error_message_title_is_empty": "タイトルが空です",
+    "bbs_error_message_text_is_empty": "テキストが空です",
+    "bbs_error_internal_server_error": "500 - Internal Server Error!",
+    "db_sqlite_file_path": "./SQLITE",
+    "bbs_prohibited_words": [],
+    "template_folder": "./HTML/*",
+    "server_host": "localhost",
+    "server_port": 8080
+}
