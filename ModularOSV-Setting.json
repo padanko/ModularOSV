@@ -6,10 +6,14 @@
     "bbs_error_message_contains_prohibited_words": "禁止ワードが含まれています",
     "bbs_error_message_title_is_empty": "タイトルが空です",
     "bbs_error_message_text_is_empty": "テキストが空です",
-    "bbs_error_internal_server_error": "500 - Internal Server Error!",
-    "db_sqlite_file_path": "./SQLITE",
+    "bbs_error_internal_server_error": "サーバーの内部でエラーが発生しました。",
+    "bbs_error_connection_to_database_fail": "データベースへの接続に失敗しました。",
+    "db_sqlite_file_path": "./osv.db/",
+    "bbs_timestamp_format": "%Y年%m月%d日%H時%M分%S秒",
     "bbs_prohibited_words": [],
-    "template_folder": "./HTML/*",
+    "template_folder": "./HTML/SimpleUI/*",
+    "default_name": "名無し",
     "server_host": "localhost",
-    "server_port": 8080
+    "server_port": 8080,
+    "server_user": []
 }

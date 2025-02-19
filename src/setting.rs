@@ -2,6 +2,8 @@
 use serde;
 use serde_json;
 
+use std::io::Read;
+
 use tokio::{fs, io::AsyncReadExt};
 
 
@@ -40,15 +42,26 @@ pub struct ApplicationSetting {
     pub bbs_error_message_title_is_empty: String,
     pub bbs_error_message_text_is_empty: String,
     pub bbs_error_internal_server_error: String,
+    pub bbs_error_connection_to_database_fail: String,
 
     // データベース
     pub db_sqlite_file_path: String,
 
     // 内部に関係するもの
     pub bbs_prohibited_words: Vec<ProhibitedWord>,
+    pub bbs_timestamp_format: String,
     pub template_folder: String,
+    pub default_name: String,
     pub server_host: String,
     pub server_port: u16,
+
+    // ユーザー
+    pub server_user: Vec<User>,
+
+
+    // ID生成
+    pub id_charset: String,
+    pub id_length: usize
 }
 
 // アプリケーションのすべての設定を取得する処理
@@ -58,6 +71,22 @@ pub async fn get_setting() -> Result<ApplicationSetting, Box<dyn std::error::Err
 
     let mut buffer = String::new();
     setting_file.read_to_string(&mut buffer).await?;
+
+    let setting: ApplicationSetting = serde_json::from_str(&buffer)?;
+
+    Ok(setting)
+
+}
+
+// アプリケーションのすべての設定を取得する処理、
+// ただし同期処理
+pub fn get_setting_sync() -> Result<ApplicationSetting, Box<dyn std::error::Error>>{
+
+    let mut setting_file = std::fs::File::open(SETTING_FILE_PATH)?;
+
+    let mut buffer = String::new();
+
+    setting_file.read_to_string(&mut buffer)?;
 
     let setting: ApplicationSetting = serde_json::from_str(&buffer)?;
 
