@@ -43,6 +43,8 @@ pub struct ApplicationSetting {
     pub bbs_error_message_text_is_empty: String,
     pub bbs_error_internal_server_error: String,
     pub bbs_error_connection_to_database_fail: String,
+    pub bbs_success_make_topic_message: String,
+    pub back_button_label: String,
 
     // データベース
     pub db_sqlite_file_path: String,
@@ -58,10 +60,9 @@ pub struct ApplicationSetting {
     // ユーザー
     pub server_user: Vec<User>,
 
-
     // ID生成
     pub id_charset: String,
-    pub id_length: usize
+    pub id_length: i32
 }
 
 // アプリケーションのすべての設定を取得する処理

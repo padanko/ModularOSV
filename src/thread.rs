@@ -1,6 +1,8 @@
+use uuid;
 use sqlx;
-use crate::setting;
 use sha2::{Sha256, Digest};
+
+use crate::setting;
 
 #[derive(sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 pub struct Post {
@@ -60,7 +62,7 @@ pub fn generate_user_id(ipaddr_: &str) -> String {
         
             let ipaddr: Vec<&str> = ipaddr_.rsplitn(2, ":").collect();
             let mut hasher = Sha256::new();
-            hasher.update(ipaddr.get(1).unwrap());
+            hasher.update(ipaddr.get(1).unwrap_or(&String::from("FUCK").as_str()).as_bytes());
             let result = hasher.finalize();
             let id: String = result
                 .iter()
@@ -68,7 +70,7 @@ pub fn generate_user_id(ipaddr_: &str) -> String {
                     let index = (byte as usize) % charset.len();
                     charset[index] as char
                 })
-                .take(length)
+                .take(length as usize)
                 .collect();
 
             return id; // IDを返す
@@ -81,5 +83,5 @@ pub fn generate_user_id(ipaddr_: &str) -> String {
 }
 
 pub fn generate_topic_id() -> String{
-    chrono::Local::now().timestamp().to_string()
+    uuid::Uuid::new_v4().to_string()
 }

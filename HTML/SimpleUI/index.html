@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ModularOSV - SimpleUI</title>
+</head>
+<body>
+    <h1>{{title}}</h1>
+    <p>{{description|safe}}</p>
+    <small>SimpleUI in ModularOSV</small>
+    <hr>
+    <ol>
+    {% for topic in topics%}
+        <li><a href="/topic/{{topic.topic_id}}">{{topic.title}}</a></li>
+    {% endfor %}
+    </ol>
+    <hr>
+    <form action="/make/topic" method="post">
+        <input type="text" name="title" placeholder="タイトル">
+        <input type="text" name="name" placeholder="ハンドルネーム">
+        <textarea name="body" style="width: 100%; height:200px"></textarea>
+        <input type="submit" style="width: 100%; height:50px">
+    </form>
+</body>
+</html>
