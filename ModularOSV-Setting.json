@@ -19,5 +19,8 @@
     "server_port": 8080,
     "server_user": [],
     "id_charset": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
-    "id_length": 4
+    "id_length": 4,
+    "render_command_img": true,
+    "render_command_video": false,
+    "render_command_url": false
 }
