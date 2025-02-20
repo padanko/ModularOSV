@@ -62,7 +62,13 @@ pub struct ApplicationSetting {
 
     // ID生成
     pub id_charset: String,
-    pub id_length: i32
+    pub id_length: i32,
+
+    // コマンド
+    pub render_command_img: bool,
+    pub render_command_video: bool,
+    pub render_command_url: bool,
+    
 }
 
 // アプリケーションのすべての設定を取得する処理

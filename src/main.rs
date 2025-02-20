@@ -12,13 +12,18 @@
 // ウェブサーバー
 use actix_web::{web, App, HttpResponse, Responder, 
                 HttpServer, HttpRequest};
-use error::{ERR_MSG_SETTING_FILE_NOT_FOUND, ERR_MSG_SQLITE_CONNECT_FAIL};
+
+
+// ファイルシステム
+use actix_files; 
+use actix_multipart::form::MultipartForm;
+
 // テンプレートエンジン
 use tera::{Context, Tera};
 
 use thread::generate_user_id;
 // 非同期処理用です
-use tokio;
+use tokio::{self, io::AsyncWriteExt};
 
 // データベース
 use sqlx;
@@ -39,7 +44,7 @@ mod form;
 // 時間関係
 mod time;
 
-use std::{arch::x86_64, sync::{Arc, Mutex}};
+use std::{io::Read, sync::{Arc, Mutex}};
 
 /////////////////////////////////////////////////
 /// SQLコマンドを定義                         ///
@@ -161,7 +166,7 @@ async fn page_topic(topic_id: web::Path<String>, tera: web::Data<Tera>) -> impl 
                         Ok(result) => {
                             for row in result {
                                 posts.push(thread::Post {
-                                    body: row.try_get(0).unwrap_or(String::new()),
+                                    body: thread::render_commands(&row.try_get(0).unwrap_or(String::new())),
                                     name: row.try_get(1).unwrap_or(String::new()),
                                     ip: row.try_get(2).unwrap_or(String::new()),
                                     date: row.try_get(3).unwrap_or(String::new())
@@ -218,9 +223,18 @@ async fn event_make_topic(form_: web::Form<form::MakeTopicFormData>, req: HttpRe
 
     match setting::get_setting().await {
         Ok(setting) => {
+            // NGワードの処理
+            for prohibited_word in setting.bbs_prohibited_words {
+                if form_.body.contains(&prohibited_word.word) {
+                    return HttpResponse::Ok()
+                    .body(format!("{}\n【{}】\n{}", setting.bbs_error_message_contains_prohibited_words, prohibited_word.word, prohibited_word.reason));
+                }
+            }
+
+
             let database_url = &setting.db_sqlite_file_path;
             let pool = sqlx::sqlite::SqlitePool::connect(database_url).await;
-            let topic_id = thread::generate_topic_id();
+            let topic_id = thread::generate_uuid();
             
             match pool {
                 Ok(pool) => {
@@ -293,6 +307,15 @@ async fn event_make_post(
 
     match setting::get_setting().await {
         Ok(setting) => {
+            
+            // NGワードの処理
+            for prohibited_word in setting.bbs_prohibited_words {
+                if form_.body.contains(&prohibited_word.word) {
+                    return HttpResponse::Ok()
+                    .body(format!("{}\n【{}】\n{}", setting.bbs_error_message_contains_prohibited_words, prohibited_word.word, prohibited_word.reason));
+                }
+            }
+
             let database_url = &setting.db_sqlite_file_path;
             let pool = sqlx::sqlite::SqlitePool::connect(database_url).await;
             let topic_id = &form_.topicid;
@@ -350,8 +373,6 @@ async fn event_make_post(
 }
 
 
-
-
 async fn poll_posts(
     topic_id: web::Path<String>,
     trigger: web::Data<Arc<Mutex<PollTrigger>>>,
@@ -386,7 +407,7 @@ async fn poll_posts(
                                     Ok(result) => {
                                         for row in result {
                                             posts.push(thread::Post {
-                                                body: row.try_get(0).unwrap_or(String::new()),
+                                                body: thread::render_commands(&row.try_get(0).unwrap_or(String::new())),
                                                 name: row.try_get(1).unwrap_or(String::new()),
                                                 ip: row.try_get(2).unwrap_or(String::new()),
                                                 date: row.try_get(3).unwrap_or(String::new())
@@ -403,7 +424,7 @@ async fn poll_posts(
                                 }
                             }
                             Err(_) => {
-                                error::error(ERR_MSG_SQLITE_CONNECT_FAIL);
+                                error::error(error::ERR_MSG_SQLITE_CONNECT_FAIL);
                             }
                         }
                     }
@@ -412,7 +433,7 @@ async fn poll_posts(
             }
         }
         Err(_) => {
-            error::error(ERR_MSG_SETTING_FILE_NOT_FOUND);
+            error::error(error::ERR_MSG_SETTING_FILE_NOT_FOUND);
         }
     }
 
@@ -420,6 +441,52 @@ async fn poll_posts(
 }
 
 
+/////////////////////////////////////////////////
+/// ファイルアップロード                      ///
+/////////////////////////////////////////////////
+
+
+async fn file_upload(payload: MultipartForm<form::UploadForm>, tera: web::Data<Tera>) -> impl Responder{
+
+    let file_id = thread::generate_uuid();
+
+    let mut file_ = Vec::new();
+
+    let _ = payload.file.file.as_file().read_to_end(&mut file_);
+    let filename = payload.file.file_name.clone().unwrap_or(String::new());
+    let filepath = std::path::Path::new(&filename);
+    let ext = match filepath.extension() {
+        Some(ext_) => {
+            ext_.to_str().unwrap_or(&String::new()).to_string()
+        }
+        None => {
+            String::new()
+        }
+    };
+
+    match tokio::fs::File::create(format!("Files/{}.{}", &file_id, &ext)).await {
+        Ok(mut file) => {
+            let _ = file.write_all(&file_).await;
+        },
+        Err(_) => {
+            error::error(error::ERR_MSG_FILE_UPLOAD_FAIL);
+        }
+    }
+
+    let mut context = tera::Context::new();
+
+    context.insert("file_id", &format!("/Files/{}.{}", &file_id, &ext));
+    match tera.render("uploaded.html", &context) {
+        Ok(html) => {
+            return HttpResponse::Ok()
+                .body(html)
+        },
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .body(error::ERR_MSG_TERA_INIT_FAIL);
+        }
+    }
+}
 
 /////////////////////////////////////////////////
 /// アプリケーション起動                      ///
@@ -427,7 +494,7 @@ async fn poll_posts(
 
 #[tokio::main]
 async fn main() {
-    println!("ModularOSV - v0.1.0");
+    println!("ModularOSV - v0.1.1");
     let trigger = Arc::new(Mutex::new(PollTrigger::default()));
     match setting::get_setting().await {
         Ok(setting) => {
@@ -437,12 +504,14 @@ async fn main() {
                         App::new()
                             .app_data(web::Data::new(tera.clone()))
                             .app_data(web::Data::new(trigger.clone()))
+                            .service(actix_files::Files::new("/Files", "./Files").show_files_listing())
                             // ルーティング
                             .route("/", web::get().to(page_index))
                             .route("/topic/{topic_id}", web::get().to(page_topic))
                             .route("/make/topic", web::post().to(event_make_topic))
                             .route("/make/post", web::post().to(event_make_post))
                             .route("/poll/{opic_id}", web::get().to(poll_posts))
+                            .route("/utils/fileupload", web::post().to(file_upload))
 
                         })
                         .bind(format!("{}:{}", &setting.server_host, setting.server_port))
