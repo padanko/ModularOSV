@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>検索結果</title>
+</head>
+<body>
+    <h1>検索結果</h1>
+    {% for item in file_list %}
+
+    <a href="/Files/{{item}}">{{item}}</a><br>
+
+    {% endfor %}
+    <hr>
+    <b>ファイル検索</b>
+    <form action="/utils/filesearch" method="post">
+        <input type="submit" value="検索">
+        <input type="text" name="query">
+    </form>
+</body>
+</html>

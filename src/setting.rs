@@ -1,11 +1,6 @@
-// JSON解析用
-use serde;
-use serde_json;
-
 use std::io::Read;
 
 use tokio::{fs, io::AsyncReadExt};
-
 
 const SETTING_FILE_PATH: &str = "./ModularOSV-Setting.json";
 
@@ -13,15 +8,14 @@ const SETTING_FILE_PATH: &str = "./ModularOSV-Setting.json";
 pub enum UserType {
     Admin,
     Moderator,
-
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct User {
     user_type: UserType,
+    user_name: String,
     password_hash: String,
 }
-
 
 // 規制ワード
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -57,6 +51,9 @@ pub struct ApplicationSetting {
     pub server_host: String,
     pub server_port: u16,
 
+    // ファイルアップロード
+    pub contents_delivery_path: String,
+
     // ユーザー
     pub server_user: Vec<User>,
 
@@ -68,12 +65,10 @@ pub struct ApplicationSetting {
     pub render_command_img: bool,
     pub render_command_video: bool,
     pub render_command_url: bool,
-    
 }
 
 // アプリケーションのすべての設定を取得する処理
-pub async fn get_setting() -> Result<ApplicationSetting, Box<dyn std::error::Error>>{
-
+pub async fn get_setting() -> Result<ApplicationSetting, Box<dyn std::error::Error>> {
     let mut setting_file = fs::File::open(SETTING_FILE_PATH).await?;
 
     let mut buffer = String::new();
@@ -82,13 +77,11 @@ pub async fn get_setting() -> Result<ApplicationSetting, Box<dyn std::error::Err
     let setting: ApplicationSetting = serde_json::from_str(&buffer)?;
 
     Ok(setting)
-
 }
 
 // アプリケーションのすべての設定を取得する処理、
 // ただし同期処理
-pub fn get_setting_sync() -> Result<ApplicationSetting, Box<dyn std::error::Error>>{
-
+pub fn get_setting_sync() -> Result<ApplicationSetting, Box<dyn std::error::Error>> {
     let mut setting_file = std::fs::File::open(SETTING_FILE_PATH)?;
 
     let mut buffer = String::new();
@@ -98,5 +91,4 @@ pub fn get_setting_sync() -> Result<ApplicationSetting, Box<dyn std::error::Erro
     let setting: ApplicationSetting = serde_json::from_str(&buffer)?;
 
     Ok(setting)
-
 }
