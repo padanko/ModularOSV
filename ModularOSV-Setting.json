@@ -22,5 +22,6 @@
     "id_length": 4,
     "render_command_img": true,
     "render_command_video": false,
-    "render_command_url": false
+    "render_command_url": false,
+    "contents_delivery_path": "./Files/"
 }
