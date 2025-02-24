@@ -1,6 +1,6 @@
 {
     "bbs_id": "test",
-    "bbs_name": "テスト",
+    "bbs_name": "テスト掲示板",
     "bbs_description_html": "テスト",
     "bbs_error_message_thread_not_found": "スレッドがありません",
     "bbs_error_message_contains_prohibited_words": "禁止ワードが含まれています",
@@ -8,13 +8,18 @@
     "bbs_error_message_text_is_empty": "テキストが空です",
     "bbs_error_internal_server_error": "サーバーの内部でエラーが発生しました。",
     "bbs_error_connection_to_database_fail": "データベースへの接続に失敗しました。",
-    "bbs_success_make_topic_message": "スレ立てが完了しました。下のボタンをクリックしてスレッドに飛んでください。",
+    "bbs_success_make_topic_message": "<meta charset=\"UTF-8\">スレ立てが完了しました。下のボタンをクリックしてスレッドに飛んでください。",
     "back_button_label": "掲示板に戻る",
-    "db_sqlite_file_path": "./osv.db/",
-    "bbs_timestamp_format": "%Y年%m月%d日%H時%M分%S秒",
-    "bbs_prohibited_words": [],
+    "db_sqlite_file_path": "./osv.db",
+    "bbs_timestamp_format": "%Y/%m/%d %H:%M:%S",
+    "bbs_prohibited_words": [
+        {
+            "word": "インコ",
+            "reason": "／・◆・＼"
+        }
+    ],
     "template_folder": "./HTML/SimpleUI/*",
-    "default_name": "名無し",
+    "default_name": "毛無しさん",
     "server_host": "localhost",
     "server_port": 8080,
     "server_user": [],
@@ -22,6 +27,10 @@
     "id_length": 4,
     "render_command_img": true,
     "render_command_video": false,
-    "render_command_url": false,
-    "contents_delivery_path": "./Files/"
+    "render_command_url": true,
+    "contents_delivery_path": "./Files/",
+    "post_pleco_run": true,
+    "pleco_script_preprocessing": [
+        "a$post-text$"
+    ]
 }

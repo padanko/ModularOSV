@@ -1,4 +1,7 @@
+use crate::pleco;
 use crate::setting;
+use crate::module;
+
 use sha2::{Digest, Sha256};
 
 #[derive(sqlx::FromRow, serde::Serialize, serde::Deserialize)]
@@ -40,7 +43,35 @@ fn html_escape(text: &str) -> String {
 
 // 投稿時に呼び出される変換
 pub fn post_replace_text(text: &str) -> String {
-    html_escape(text) // XSS対策
+    let mut pleco_run = false;
+
+    match setting::get_setting_sync() {
+        Ok(setting_) => { pleco_run = setting_.post_pleco_run },
+        Err(_) => { }
+    }
+
+
+    // PLECoScriptが有効かどうか
+    if text.starts_with("#PLECoScript#\n") && pleco_run {
+        let pleco_object = pleco::pleco::PLECo::new();
+        let text_ = pleco_object.handle_command(text);
+        let text_ = &html_escape(&text_); // XSS対策
+        text_.to_string()
+    } else {
+        let text_ = &html_escape(text); // XSS対策
+        text_.to_string()
+    }
+
+
+
+}
+
+pub fn post_replace_text_form(text: &str) -> String {
+
+    let text = &module::pleco_processing(text);
+    
+    post_replace_text(text)
+
 }
 
 // IPアドレスを素にIDを生成する
@@ -70,51 +101,4 @@ pub fn generate_user_id(ipaddr_: &str) -> String {
 
 pub fn generate_uuid() -> String {
     uuid::Uuid::new_v4().to_string()
-}
-
-fn replace_regex(
-    command: regex::Regex,
-    conditions: bool,
-    text: &str,
-    tag: &str,
-    key: &str,
-) -> String {
-    if conditions {
-        command
-            .replace_all(text, |caps: &regex::Captures| {
-                format!("<{} {}='{}'>", tag, key, &caps[1])
-            })
-            .to_string()
-    } else {
-        text.to_string()
-    }
-}
-
-fn replace_regex_link(command: regex::Regex, conditions: bool, text: &str) -> String {
-    if conditions {
-        command
-            .replace_all(text, |caps: &regex::Captures| {
-                format!("<a href='{}'>{}</a>", &caps[1], &caps[1])
-            })
-            .to_string()
-    } else {
-        text.to_string()
-    }
-}
-
-pub fn render_commands(text: &str) -> String {
-    let img_command = regex::Regex::new(r"!Img:&quot;(.+)&quot;").unwrap();
-    let url_command = regex::Regex::new(r"!URL:&quot;(.+)&quot;").unwrap();
-
-    let text = &text.replace("\n", "<br>");
-
-    match setting::get_setting_sync() {
-        Ok(setting) => {
-            let mut text = replace_regex(img_command, setting.render_command_img, text, "img", "src");
-            text = replace_regex_link(url_command, setting.render_command_url, &text);
-
-            text
-        }
-        Err(_) => text.to_string(),
-    }
 }

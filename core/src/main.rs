@@ -40,6 +40,15 @@ mod form;
 // 時間関係
 mod time;
 
+// 拡張用
+mod pleco;
+
+// モジュール
+mod module;
+
+// テキストデータの加工
+mod text;
+
 use std::{io::Read, sync::Arc};
 use tokio::sync::Mutex;
 
@@ -88,7 +97,7 @@ async fn page_index(tera: web::Data<Tera>) -> impl Responder {
                         }
                     }
                     Err(e) => {
-                        error::error(&format!("{}", e));
+                        error::error(&e.to_string());
                     }
                 },
                 Err(_) => {
@@ -97,6 +106,8 @@ async fn page_index(tera: web::Data<Tera>) -> impl Responder {
                         .body(setting.bbs_error_connection_to_database_fail);
                 }
             }
+
+            topics.reverse();
 
             // HTMLをレンダリング
             let mut ctx = Context::new();
@@ -137,7 +148,7 @@ async fn page_topic(topic_id: web::Path<String>, tera: web::Data<Tera>) -> impl 
                             title = result.try_get_unchecked(0).unwrap_or(String::new());
                         }
                         Err(e) => {
-                            error::error(&format!("{}", e));
+                            error::error(&e.to_string());
                         }
                     }
 
@@ -150,7 +161,7 @@ async fn page_topic(topic_id: web::Path<String>, tera: web::Data<Tera>) -> impl 
                         Ok(result) => {
                             for row in result {
                                 posts.push(thread::Post {
-                                    body: thread::render_commands(
+                                    body: text::render_commands(
                                         &row.try_get(0).unwrap_or(String::new()),
                                     ),
                                     name: row.try_get(1).unwrap_or(String::new()),
@@ -160,7 +171,7 @@ async fn page_topic(topic_id: web::Path<String>, tera: web::Data<Tera>) -> impl 
                             }
                         }
                         Err(e) => {
-                            error::error(&format!("{}", e));
+                            error::error(&e.to_string());
                         }
                     }
                 }
@@ -236,7 +247,7 @@ async fn event_make_topic(
                         let name = &form_.name;
                         let text = &form_.body;
 
-                        let text = &thread::post_replace_text(text);
+                        let text = &thread::post_replace_text_form(text);
                         let mut name = &thread::post_replace_text(name);
 
                         if name.is_empty() {
@@ -254,7 +265,7 @@ async fn event_make_topic(
                             .await;
 
                         HttpResponse::Ok().content_type("text/html").body(format!(
-                            "{}<br><a href='/topic/{}'>[GO]</a>",
+                            "<meta charset='UTF-8'>{}<br><a href='/topic/{}'>[GO]</a>",
                             setting.bbs_success_make_topic_message, topic_id
                         ))
                     } else {
@@ -307,14 +318,17 @@ async fn event_make_post(
             match pool {
                 Ok(pool) => {
                     if !form_.body.is_empty() {
-                        let mut name = &form_.name;
+                        let name = &form_.name;
                         let text = &form_.body;
 
-                        let text = &thread::post_replace_text(text);
+                        let text = &thread::post_replace_text_form(text);
+                        let mut name = &thread::post_replace_text(name);
 
                         if name.is_empty() {
                             name = &setting.default_name
                         }
+
+                    
 
                         let mut trigger = trigger.lock().await;
                         trigger.topic_id = topic_id.clone();
@@ -383,17 +397,17 @@ async fn poll_posts(
                                     Ok(result) => {
                                         for row in result {
                                             posts.push(thread::Post {
-                                                body: thread::render_commands(
+                                                body: text::render_commands(
                                                     &row.try_get(0).unwrap_or(String::new()),
                                                 ),
-                                                name: row.try_get(1).unwrap_or(String::new()),
-                                                ip: row.try_get(2).unwrap_or(String::new()),
-                                                date: row.try_get(3).unwrap_or(String::new()),
+                                                name: row.try_get(1).unwrap_or_default(),
+                                                ip: row.try_get(2).unwrap_or_default(),
+                                                date: row.try_get(3).unwrap_or_default(),
                                             });
                                         }
                                     }
                                     Err(e) => {
-                                        error::error(&format!("{}", e));
+                                        error::error(&e.to_string());
                                     }
                                 }
 
@@ -529,7 +543,10 @@ async fn file_search(
 
 #[tokio::main]
 async fn main() {
-    println!("ModularOSV - v0.1.3");
+    println!("ModularOSV - v0.1.4");
+    println!("===================");
+    println!("BUILD        {}", env!("BUILD_ID"));
+    println!("");
     let trigger = Arc::new(Mutex::new(PollTrigger::default()));
     match setting::get_setting().await {
         Ok(setting) => {
@@ -541,7 +558,7 @@ async fn main() {
                             .app_data(web::Data::new(trigger.clone()))
                             .service(
                                 actix_files::Files::new("/Files", &setting.contents_delivery_path)
-                                    .show_files_listing(),
+                                    .show_files_listing()
                             )
                             // ルーティング
                             .route("/", web::get().to(page_index))
@@ -558,7 +575,7 @@ async fn main() {
                         match server.run().await {
                             Ok(_) => {}
                             Err(e) => {
-                                error::error(&format!("{}", e));
+                                error::error(&e.to_string());
                             }
                         }
                     } else {

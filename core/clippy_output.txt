@@ -1,0 +1,270 @@
+   Compiling modular-osv v0.1.4 (/home/padanko/program/rust/modular-osv/core)
+warning: this `else { if .. }` block can be collapsed
+   --> src/pleco/pleco.rs:420:20
+    |
+420 |               } else {
+    |  ____________________^
+421 | |
+422 | |
+423 | |                 if let (Some(param1), Some(param2)) = (tokens.get(1), tokens.get(2)) {
+...   |
+482 | |                 }
+483 | |             }
+    | |_____________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#collapsible_else_if
+    = note: `#[warn(clippy::collapsible_else_if)]` on by default
+help: collapse nested if block
+    |
+420 ~             } else if let (Some(param1), Some(param2)) = (tokens.get(1), tokens.get(2)) {
+421 + 
+422 +                 let mut param1_ = 0;
+423 +                 let mut param2_ = 0;
+424 + 
+425 +                 if let lexer::Token::Integer(param1) = param1 {
+426 +                     param1_ = *param1;
+427 +                 }
+428 + 
+429 +                 if let lexer::Token::Integer(param2) = param2 {
+430 +                     param2_ = *param2;
+431 +                 }
+432 + 
+433 +                 if let lexer::Token::Var(param1) = param1 {
+434 +                     if let Some(param1) = self.vars.lock().unwrap().get(param1) {
+435 +                         if let lexer::Token::Integer(param1) = param1 {
+436 +                             param1_ = *param1;
+437 +                         }
+438 +                     }
+439 +                 }
+440 + 
+441 +                 if let lexer::Token::Var(param2) = param2 {
+442 +                     if let Some(param2) = self.vars.lock().unwrap().get(param2) {
+443 +                         if let lexer::Token::Integer(param2) = param2 {
+444 +                             param2_ = *param2;
+445 +                         } 
+446 +                     }
+447 +                 }
+448 + 
+449 +                 if let lexer::Token::Expr(param1) = param1 {
+450 +                     if let Some(lexer::Token::Integer(param1)) = self.process_expr(param1) {
+451 +                         param1_ = param1;
+452 +                     } else {
+453 +                         error("formula eval error");
+454 +                     }
+455 +                 }
+456 + 
+457 +                 if let lexer::Token::Expr(param2) = param2 {
+458 +                     if let Some(lexer::Token::Integer(param2)) = self.process_expr(param2) {
+459 +                         param2_ = param2
+460 +                     } else {
+461 +                         error("formula eval error");
+462 +                     }
+463 +                 }
+464 + 
+465 +                 match operation {
+466 +                     lexer::Token::Command('+') => Some(lexer::Token::Integer(param1_ + param2_)),
+467 +                     lexer::Token::Command('-') => Some(lexer::Token::Integer(param1_ - param2_)),
+468 +                     lexer::Token::Command('x') => Some(lexer::Token::Integer(param1_ * param2_)),
+469 +                     lexer::Token::Command('/') => Some(lexer::Token::Integer(param1_ / param2_)),
+470 +                     lexer::Token::Command('%') => Some(lexer::Token::Integer(param1_ % param2_)),
+471 +                     lexer::Token::Command('=') => Some(lexer::Token::Integer( if param1_ == param2_ { 1 } else { 0 } )),
+472 +                     lexer::Token::Command('>') => Some(lexer::Token::Integer( if param1_ > param2_ { 1 } else { 0 } )),
+473 +                     lexer::Token::Command('<') => Some(lexer::Token::Integer( if param1_ < param2_ { 1 } else { 0 } )),
+474 +                     lexer::Token::Command('!') => Some(lexer::Token::Integer( if param1_ != param2_ { 1 } else { 0 } )),
+475 +                     _ => { error("unknown operation"); None }
+476 +                 }
+477 +             } else {
+478 +                 None
+479 +             }
+    |
+
+warning: you seem to be trying to use `match` for destructuring a single pattern. Consider using `if let`
+  --> src/thread.rs:48:5
+   |
+48 | /     match setting::get_setting_sync() {
+49 | |         Ok(setting_) => { pleco_run = setting_.post_pleco_run },
+50 | |         Err(_) => { }
+51 | |     }
+   | |_____^ help: try: `if let Ok(setting_) = setting::get_setting_sync() { pleco_run = setting_.post_pleco_run }`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#single_match
+   = note: `#[warn(clippy::single_match)]` on by default
+
+error: this loop never actually loops
+   --> src/pleco/lexer.rs:29:9
+    |
+29  | /         while let Some(c) = self.input.pop_front() {
+30  | |             match c {
+31  | |                 '#' => {
+32  | |                     let mut arg = String::new();
+...   |
+156 | |             }
+157 | |         }
+    | |_________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#never_loop
+    = note: `#[deny(clippy::never_loop)]` on by default
+
+warning: module has the same name as its containing module
+ --> src/pleco/mod.rs:2:1
+  |
+2 | pub mod pleco;
+  | ^^^^^^^^^^^^^^
+  |
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#module_inception
+  = note: `#[warn(clippy::module_inception)]` on by default
+
+warning: this expression creates a reference which is immediately dereferenced by the compiler
+  --> src/pleco/pleco.rs:67:49
+   |
+67 | ...                   self.handle_command(&func_code);
+   |                                           ^^^^^^^^^^ help: change this to: `func_code`
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_borrow
+   = note: `#[warn(clippy::needless_borrow)]` on by default
+
+warning: this `if let` can be collapsed into the outer `if let`
+   --> src/pleco/pleco.rs:123:21
+    |
+123 | /                     if let lexer::Token::Integer(param) = param1 {
+124 | |                         param_ = *param;
+125 | |                     }
+    | |_____________________^
+    |
+help: the outer pattern can be modified to include the inner pattern
+   --> src/pleco/pleco.rs:122:29
+    |
+122 |                 if let Some(param1) = self.vars.lock().unwrap().get(param) {
+    |                             ^^^^^^ replace this binding
+123 |                     if let lexer::Token::Integer(param) = param1 {
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ with this pattern
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#collapsible_match
+    = note: `#[warn(clippy::collapsible_match)]` on by default
+
+warning: accessing first element with `tokens.get(0)`
+   --> src/pleco/pleco.rs:394:34
+    |
+394 |         if let Some(operation) = tokens.get(0) {
+    |                                  ^^^^^^^^^^^^^ help: try: `tokens.first()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#get_first
+    = note: `#[warn(clippy::get_first)]` on by default
+
+warning: this `if let` can be collapsed into the outer `if let`
+   --> src/pleco/pleco.rs:404:29
+    |
+404 | / ...                   if let lexer::Token::String(param) = param {
+405 | | ...                       let pat_ = param;
+406 | | ...                       pat = pat_;
+407 | | ...                   }
+    | |_______________________^
+    |
+help: the outer pattern can be modified to include the inner pattern
+   --> src/pleco/pleco.rs:403:37
+    |
+403 |                         if let Some(param) = vars.get(param) {
+    |                                     ^^^^^ replace this binding
+404 |                             if let lexer::Token::String(param) = param {
+    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^ with this pattern
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#collapsible_match
+
+warning: this `if let` can be collapsed into the outer `if let`
+   --> src/pleco/pleco.rs:438:29
+    |
+438 | / ...                   if let lexer::Token::Integer(param1) = param1 {
+439 | | ...                       param1_ = *param1;
+440 | | ...                   }
+    | |_______________________^
+    |
+help: the outer pattern can be modified to include the inner pattern
+   --> src/pleco/pleco.rs:437:37
+    |
+437 |                         if let Some(param1) = self.vars.lock().unwrap().get(param1) {
+    |                                     ^^^^^^ replace this binding
+438 |                             if let lexer::Token::Integer(param1) = param1 {
+    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ with this pattern
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#collapsible_match
+
+warning: this `if let` can be collapsed into the outer `if let`
+   --> src/pleco/pleco.rs:446:29
+    |
+446 | / ...                   if let lexer::Token::Integer(param2) = param2 {
+447 | | ...                       param2_ = *param2;
+448 | | ...                   } 
+    | |_______________________^
+    |
+help: the outer pattern can be modified to include the inner pattern
+   --> src/pleco/pleco.rs:445:37
+    |
+445 |                         if let Some(param2) = self.vars.lock().unwrap().get(param2) {
+    |                                     ^^^^^^ replace this binding
+446 |                             if let lexer::Token::Integer(param2) = param2 {
+    |                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ with this pattern
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#collapsible_match
+
+warning: redundant pattern matching, consider using `is_some()`
+   --> src/pleco/pleco.rs:501:20
+    |
+501 |             if let Some(_) = buf_splitted.get(c) {
+    |             -------^^^^^^^---------------------- help: try: `if buf_splitted.get(c).is_some()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#redundant_pattern_matching
+    = note: `#[warn(clippy::redundant_pattern_matching)]` on by default
+
+warning: unneeded `return` statement
+   --> src/main.rs:525:21
+    |
+525 |                     return HttpResponse::Ok().body(html);
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_return
+    = note: `#[warn(clippy::needless_return)]` on by default
+help: remove `return`
+    |
+525 ~                     HttpResponse::Ok().body(html)
+526 |
+...
+530 |                 }
+531 ~             }
+    |
+
+warning: unneeded `return` statement
+   --> src/main.rs:529:21
+    |
+529 |                     return HttpResponse::InternalServerError().body(setting.bbs_error_internal_server_error);
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_return
+help: remove `return`
+    |
+529 ~                     HttpResponse::InternalServerError().body(setting.bbs_error_internal_server_error)
+530 |                 }
+531 ~             }
+    |
+
+warning: unneeded `return` statement
+   --> src/main.rs:535:13
+    |
+535 |             return HttpResponse::InternalServerError().body(error::ERR_MSG_SETTING_FILE_NOT_FOUND);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#needless_return
+help: remove `return`
+    |
+535 -             return HttpResponse::InternalServerError().body(error::ERR_MSG_SETTING_FILE_NOT_FOUND);
+535 +             HttpResponse::InternalServerError().body(error::ERR_MSG_SETTING_FILE_NOT_FOUND)
+    |
+
+warning: empty string literal in `println!`
+   --> src/main.rs:549:5
+    |
+549 |     println!("");
+    |     ^^^^^^^^^--^
+    |              |
+    |              help: remove the empty string
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#println_empty_string
+    = note: `#[warn(clippy::println_empty_string)]` on by default
+
+warning: `modular-osv` (bin "modular-osv") generated 14 warnings
+error: could not compile `modular-osv` (bin "modular-osv") due to 1 previous error; 14 warnings emitted

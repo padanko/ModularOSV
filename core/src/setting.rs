@@ -65,6 +65,10 @@ pub struct ApplicationSetting {
     pub render_command_img: bool,
     pub render_command_video: bool,
     pub render_command_url: bool,
+    pub post_pleco_run: bool,
+
+    // モジュール
+    pub pleco_script_preprocessing: Vec<String>,
 }
 
 // アプリケーションのすべての設定を取得する処理

@@ -1,0 +1,26 @@
+[package]
+name = "mosvutils"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.30", features = ["derive"] }
+crossterm = "0.28.1"
+
+[[bin]]
+name = "mosvps"
+path = "./src/mosvps/main.rs"
+
+[[bin]]
+name = "mosvrplc"
+path = "./src/mosvrplc/main.rs"
+
+[[bin]]
+name = "mosvtemplate"
+path = "./src/mosvtemplate/main.rs"
+
+[profile.release]
+lto = "fat"
+debug = 0
+codegen-units = 1
+opt-level = "z"

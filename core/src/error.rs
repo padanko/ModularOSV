@@ -13,6 +13,7 @@ pub fn fatal_error(message: &str) {
     process::exit(0);
 }
 
+// 通常のエラーメッセージ
 pub fn error(message: &str) {
     eprintln!("< Error! >          {}", message);
 }
