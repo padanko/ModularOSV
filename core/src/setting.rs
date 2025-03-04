@@ -28,6 +28,7 @@ pub struct ProhibitedWord {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct ApplicationSetting {
     // 表示に関係するもの
+    pub bbs_index_background_image_url: String,
     pub bbs_id: String,
     pub bbs_name: String,
     pub bbs_description_html: String,

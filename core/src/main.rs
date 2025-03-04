@@ -62,6 +62,7 @@ const SQL_GET_POSTS: &str = "SELECT body, name, ip, timestamp FROM Posts WHERE t
 const SQL_MAKE_POST: &str =
     "INSERT INTO Posts (body, name, ip, timestamp, topic_id) VALUES ($1, $2, $3, $4, $5)";
 const SQL_MAKE_TOPIC: &str = "INSERT INTO Topics (title, topic_id, admin) VALUES ($1, $2, $3)";
+const SQL_GET_POST_SEARCH: &str = "SELECT body, name, ip, timestamp FROM Posts WHERE body LIKE $1";
 
 // page_から始まる場合はGET
 // event_から始まる場合はPOST
@@ -114,6 +115,7 @@ async fn page_index(tera: web::Data<Tera>) -> impl Responder {
             ctx.insert("title", &setting.bbs_name);
             ctx.insert("description", &setting.bbs_description_html);
             ctx.insert("topics", &topics);
+            ctx.insert("background_image_url", &setting.bbs_index_background_image_url);
 
             let html = tera.render("index.html", &ctx).unwrap_or_default();
 
@@ -199,6 +201,75 @@ async fn page_topic(topic_id: web::Path<String>, tera: web::Data<Tera>) -> impl 
             HttpResponse::InternalServerError().body(error::ERR_MSG_SETTING_FILE_NOT_FOUND)
         }
     }
+}
+
+///////////////////////////////////////////////
+// 検索                                      //
+///////////////////////////////////////////////
+
+async fn post_search(query: web::Query<form::PostSearchQuery>, tera: web::Data<Tera>) -> impl Responder {
+
+    match setting::get_setting().await {
+        Ok(setting) => {
+            let mut posts: Vec<thread::Post> = Vec::new();
+
+            let database_url: &String = &setting.db_sqlite_file_path;
+            let pool = sqlx::sqlite::SqlitePool::connect(database_url).await;
+
+            match pool {
+                Ok(pool) => {
+                    // スレッド取得
+                    match sqlx::query(SQL_GET_POST_SEARCH)
+                        .bind(&format!("%{}%", &*query.query))
+                        .fetch_all(&pool)
+                        .await
+                    {
+                        Ok(result) => {
+                            for row in result {
+                                posts.push(thread::Post {
+                                    body: text::render_commands(
+                                        &row.try_get(0).unwrap_or(String::new()),
+                                    ),
+                                    name: row.try_get(1).unwrap_or(String::new()),
+                                    ip: row.try_get(2).unwrap_or(String::new()),
+                                    date: row.try_get(3).unwrap_or(String::new()),
+                                })
+                            }
+                        }
+                        Err(e) => {
+                            error::error(&e.to_string());
+                        }
+                    }
+                }
+                Err(_) => {
+                    error::error(error::ERR_MSG_SQLITE_CONNECT_FAIL);
+                    return HttpResponse::InternalServerError()
+                        .body(setting.bbs_error_connection_to_database_fail);
+                }
+            }
+
+            // HTMLをレンダリング
+            let mut ctx = Context::new();
+            ctx.insert("posts", &posts);
+            ctx.insert("query", &*query.query);
+            ctx.insert("btn_back", &setting.back_button_label);
+
+            match tera.render("post_search_result.html", &ctx) {
+                Ok(html) => {
+                    HttpResponse::Ok().body(html)
+                }, Err(e) => {
+                    HttpResponse::InternalServerError().body(e.to_string())
+                }
+            }
+
+            // 返す
+        }
+        Err(_) => {
+            error::error(error::ERR_MSG_SETTING_FILE_NOT_FOUND);
+            HttpResponse::InternalServerError().body(error::ERR_MSG_SETTING_FILE_NOT_FOUND)
+        }
+    }
+
 }
 
 ///////////////////////////////////////////////
@@ -297,8 +368,10 @@ async fn event_make_post(
         .and_then(|v| v.to_str().ok())
         .unwrap_or("Unknown");
 
+
     match setting::get_setting().await {
         Ok(setting) => {
+            
             // NGワードの処理
             for prohibited_word in setting.bbs_prohibited_words {
                 if form_.body.contains(&prohibited_word.word) {
@@ -543,7 +616,7 @@ async fn file_search(
 
 #[tokio::main]
 async fn main() {
-    println!("ModularOSV - v0.1.4");
+    println!("ModularOSV - v0.1.5");
     println!("===================");
     println!("BUILD        {}", env!("BUILD_ID"));
     println!("");
@@ -568,7 +641,7 @@ async fn main() {
                             .route("/poll/{opic_id}", web::get().to(poll_posts))
                             .route("/utils/fileupload", web::post().to(file_upload))
                             .route("/utils/filesearch", web::post().to(file_search))
-
+                            .route("/utils/postsearch", web::get().to(post_search))
                     })
                     .bind(format!("{}:{}", &setting.server_host, setting.server_port))
                     {

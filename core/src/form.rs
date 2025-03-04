@@ -24,3 +24,8 @@ pub struct UploadForm {
 pub struct FileSearchFormData {
     pub query: String
 }
+
+#[derive(serde::Deserialize)]
+pub struct PostSearchQuery {
+    pub query: String
+}
