@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ModularOSV - SimpleUI</title>
+    <style>
+        img {
+            width: 50vw;
+            height:auto;
+        }
+    </style>
+</head>
+<body style="background-color: #efefef;">
+    <h1 style="color: red">検索結果</h1>
+    <p>{{ query }} での検索結果</p>
+    <hr>
+    <a href="/">■{{ btn_back }}</a>
+    <hr>
+    <div id="thr">
+    {% for post in posts %}
+        <dl>
+            <dt>
+                {{ loop.index }}: 
+                <b style="color: green">{{ post.name|safe}}</b>, {{ post.date|safe }}, ID: {{ post.ip | safe }}
+            </dt>
+            <dd>{{ post.body|safe }}</dd>
+        </dl>
+    {% endfor %}
+    </div>
+    <hr>
+    <a href="/">■{{ btn_back }}</a>
+</body>
+</html>
